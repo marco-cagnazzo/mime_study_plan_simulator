@@ -1,137 +1,40 @@
-// Stato globale dell'applicazione
-const state = {
-  cohort: "2026",
-  trackKey: null,
-  rulesData: null,
-  mandatory: [],
-  selectedSoftSkill: null,
-  selectedCore: [],
-  selectedIntegrative: [],
-  selectedElectives: []
-};
-
-// Inizializzazione e caricamento delle regole JSON
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const res = await fetch("data/rules_mime.json");
-    state.rulesData = await res.json();
-    initApp();
-  } catch (err) {
-    console.error("Failed to load rules JSON:", err);
-  }
-});
-
-function initApp() {
-  setupNavigation();
-  setupCohort();
+// Funzioni di supporto per formattare ed etichettare il periodo
+function formatPeriodLabel(period) {
+  if (period === "S1") return "Semester 1";
+  if (period === "S2") return "Semester 2";
+  if (period === "A") return "Full Year";
+  return "Flexible";
 }
 
-function setupNavigation() {
-  document.querySelectorAll(".btn-prev").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const targetStep = parseInt(btn.dataset.target, 10);
-      goToStep(targetStep);
-    });
-  });
+function getPeriodBadge(period) {
+  const p = (period || "Any").toUpperCase();
+  let cssClass = "badge-any";
+  if (p === "S1") cssClass = "badge-s1";
+  else if (p === "S2") cssClass = "badge-s2";
+  else if (p === "A") cssClass = "badge-a";
 
-  document.getElementById("btn-step-0-next").addEventListener("click", () => {
-    renderTrackOptions();
-    goToStep(1);
-  });
-
-  document.getElementById("btn-step-1-next").addEventListener("click", () => {
-    if (!state.selectedSoftSkill) {
-      alert("Please select one Soft Skill activity.");
-      return;
-    }
-    renderCoreStep();
-    goToStep(2);
-  });
-
-  document.getElementById("btn-step-2-next").addEventListener("click", () => {
-    const track = state.rulesData[state.cohort].curricula[state.trackKey];
-    const req = track.core_rules.required_count;
-    if (state.selectedCore.length !== req) {
-      alert(`You must select exactly ${req} core courses.`);
-      return;
-    }
-    renderIntegrativeStep();
-    goToStep(3);
-  });
-
-  document.getElementById("btn-step-3-next").addEventListener("click", () => {
-    const track = state.rulesData[state.cohort].curricula[state.trackKey];
-    let totalReq = 0;
-    track.integrative_rules.forEach(r => totalReq += r.required_count);
-    if (state.selectedIntegrative.length !== totalReq) {
-      alert(`Please satisfy all integrative course requirements (${totalReq} courses required).`);
-      return;
-    }
-    renderElectivesStep();
-    goToStep(4);
-  });
-
-  document.getElementById("btn-step-4-next").addEventListener("click", () => {
-    const electiveCfu = state.selectedElectives.reduce((sum, c) => sum + c.cfu, 0);
-    if (electiveCfu !== 12) {
-      alert(`You must select exactly 12 CFU for elective courses (currently: ${electiveCfu} CFU).`);
-      return;
-    }
-    renderSummaryStep();
-    goToStep(5);
-  });
+  return `<span class="badge-period ${cssClass}">${p} (${formatPeriodLabel(p)})</span>`;
 }
 
-function goToStep(stepIndex) {
-  document.querySelectorAll(".wizard-step").forEach(s => s.classList.remove("active"));
-  document.querySelectorAll(".step-badge").forEach(b => b.classList.remove("active"));
-
-  document.getElementById(`step-${stepIndex}`).classList.add("active");
-  const badge = document.querySelector(`.step-badge[data-step="${stepIndex}"]`);
-  if (badge) badge.classList.add("active");
-}
-
-function setupCohort() {
-  document.getElementById("cohort-select").addEventListener("change", (e) => {
-    state.cohort = e.target.value;
-  });
-}
-
-function renderTrackOptions() {
-  const select = document.getElementById("track-select");
-  select.innerHTML = "";
-  const tracks = state.rulesData[state.cohort].curricula;
-
-  for (const [key, track] of Object.entries(tracks)) {
-    const opt = document.createElement("option");
-    opt.value = key;
-    opt.textContent = `${track.name} (${track.code})`;
-    select.appendChild(opt);
-  }
-
-  state.trackKey = select.value;
-  updateTrackUI();
-
-  select.addEventListener("change", (e) => {
-    state.trackKey = e.target.value;
-    updateTrackUI();
-  });
-}
-
+// 1. Renderizzazione del Passo 1 (Mandatory + Soft Skills)
 function updateTrackUI() {
   const track = state.rulesData[state.cohort].curricula[state.trackKey];
   state.mandatory = [...track.mandatory];
 
-  // Mostra insegnamenti obbligatori
   const list = document.getElementById("mandatory-list");
   list.innerHTML = "";
   track.mandatory.forEach(m => {
     const li = document.createElement("li");
-    li.innerHTML = `<span><strong>${m.name}</strong> (${m.ssd})</span><span>${m.cfu} CFU</span>`;
+    li.innerHTML = `
+      <span>
+        <strong>${m.name}</strong> [${m.ssd}]
+        ${getPeriodBadge(m.period)}
+      </span>
+      <span>${m.cfu} CFU</span>
+    `;
     list.appendChild(li);
   });
 
-  // Mostra opzioni Soft Skill
   const softDiv = document.getElementById("soft-skills-container");
   softDiv.innerHTML = "";
   const softOptions = state.rulesData[state.cohort].soft_skills.options;
@@ -139,7 +42,7 @@ function updateTrackUI() {
     const label = document.createElement("label");
     label.innerHTML = `
       <input type="radio" name="soft_skill" value="${s.code}">
-      <span>${s.name} (${s.cfu} CFU)</span>
+      <span><strong>${s.name}</strong> (${s.cfu} CFU) ${getPeriodBadge(s.period)}</span>
     `;
     softDiv.appendChild(label);
   });
@@ -151,6 +54,7 @@ function updateTrackUI() {
   });
 }
 
+// 2. Renderizzazione del Passo 2 (Core Courses)
 function renderCoreStep() {
   const track = state.rulesData[state.cohort].curricula[state.trackKey];
   const container = document.getElementById("core-container");
@@ -158,13 +62,16 @@ function renderCoreStep() {
   state.selectedCore = [];
 
   document.getElementById("core-instruction").textContent =
-    `Select ${track.core_rules.required_count} course(s) from the following options:`;
+    `Select ${track.core_rules.required_count} core course(s) from the following list:`;
 
   track.core_rules.options.forEach(c => {
     const label = document.createElement("label");
     label.innerHTML = `
       <input type="checkbox" value="${c.code}">
-      <span><strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU (Year ${c.year})</span>
+      <span>
+        <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU (Year ${c.year})
+        ${getPeriodBadge(c.period)}
+      </span>
     `;
     container.appendChild(label);
   });
@@ -178,6 +85,7 @@ function renderCoreStep() {
   });
 }
 
+// 3. Renderizzazione del Passo 3 (Integrative Courses)
 function renderIntegrativeStep() {
   const track = state.rulesData[state.cohort].curricula[state.trackKey];
   const container = document.getElementById("integrative-container");
@@ -186,7 +94,7 @@ function renderIntegrativeStep() {
 
   const selectedCoreCodes = state.selectedCore.map(c => c.code);
 
-  track.integrative_rules.forEach((ruleGroup, idx) => {
+  track.integrative_rules.forEach((ruleGroup) => {
     const groupDiv = document.createElement("div");
     groupDiv.className = "section-block";
     groupDiv.innerHTML = `<h4>${ruleGroup.title}</h4>`;
@@ -197,7 +105,10 @@ function renderIntegrativeStep() {
       const label = document.createElement("label");
       label.innerHTML = `
         <input type="checkbox" data-group="${ruleGroup.group_id}" value="${c.code}">
-        <span><strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU</span>
+        <span>
+          <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU (Year ${c.year || 1})
+          ${getPeriodBadge(c.period)}
+        </span>
       `;
       groupDiv.appendChild(label);
     });
@@ -217,6 +128,7 @@ function renderIntegrativeStep() {
   });
 }
 
+// 4. Renderizzazione del Passo 4 (Electives)
 function renderElectivesStep() {
   const container = document.getElementById("electives-container");
   container.innerHTML = "";
@@ -228,7 +140,6 @@ function renderElectivesStep() {
     ...state.selectedIntegrative.map(c => c.code)
   ]);
 
-  // Aggrega tutti i corsi offerti dal MIME per la coorte
   const trackData = state.rulesData[state.cohort].curricula;
   const pool = new Map();
 
@@ -239,14 +150,16 @@ function renderElectivesStep() {
     tr.integrative_rules.forEach(g => g.options.forEach(c => pool.set(c.code, c)));
   }
 
-  // Filtra i corsi non ancora inseriti nel piano
   const electivesList = Array.from(pool.values()).filter(c => !alreadyChosen.has(c.code) && c.cfu === 6);
 
   electivesList.forEach(c => {
     const label = document.createElement("label");
     label.innerHTML = `
       <input type="checkbox" value="${c.code}">
-      <span><strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU</span>
+      <span>
+        <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU
+        ${getPeriodBadge(c.period)}
+      </span>
     `;
     container.appendChild(label);
   });
@@ -260,10 +173,8 @@ function renderElectivesStep() {
   });
 }
 
+// 5. Renderizzazione del Passo 5 (Riepilogo riorganizzato in 4 blocchi semestrali)
 function renderSummaryStep() {
-  const tbody = document.querySelector("#summary-table tbody");
-  tbody.innerHTML = "";
-
   const fixed = state.rulesData[state.cohort].fixed_activities;
 
   const allItems = [
@@ -275,6 +186,7 @@ function renderSummaryStep() {
     ...fixed.map(c => ({ ...c, type: "Fixed Activity" }))
   ];
 
+  // Calcolo totali e crediti di legge
   let totalCfu = 0;
   let coreCfu = 0;
   let integrativeCfu = 0;
@@ -284,37 +196,105 @@ function renderSummaryStep() {
     if (["ING-INF/02", "ING-INF/03"].includes(item.ssd) && item.type !== "Elective") {
       coreCfu += item.cfu;
     }
-    if (["MAT/09", "MAT/03", "FIS/03", "FIS/07", "ING-INF/05", "ING-INF/04", "ING-INF/01", "ING-INF/07"].includes(item.ssd) && item.type !== "Elective") {
+    if (["MAT/09", "MAT/03", "FIS/03", "FIS/07", "ING-INF/05", "ING-INF/04", "ING-INF/01", "ING-INF/07", "BIO/11", "BIO/09", "MED/01", "ING-IND/34"].includes(item.ssd) && item.type !== "Elective") {
       integrativeCfu += item.cfu;
     }
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.type}</td>
-      <td>${item.name}</td>
-      <td>${item.ssd || "N/A"}</td>
-      <td>${item.cfu}</td>
-    `;
-    tbody.appendChild(tr);
   });
 
-  // Validazione dei vincoli di legge
+  // Validazione
   const validationDiv = document.getElementById("validation-report");
   const isLegalTotal = totalCfu >= 120 && totalCfu <= 126;
   const isLegalCore = coreCfu >= 45 && coreCfu <= 69;
   const isLegalIntegrative = integrativeCfu >= 15 && integrativeCfu <= 30;
-
   const valid = isLegalTotal && isLegalCore && isLegalIntegrative;
 
   validationDiv.className = `validation-box ${valid ? "valid-status" : "invalid-status"}`;
   validationDiv.innerHTML = `
     <h4>${valid ? "Study Plan Compliant (ASP Validated)" : "Study Plan Requires Attention (Deviations Detected)"}</h4>
     <ul>
-      <li>Total Credits: <strong>${totalCfu} CFU</strong> (Legal limit: 120 - 126 CFU)</li>
-      <li>Core Credits (ING-INF/02 & ING-INF/03): <strong>${coreCfu} CFU</strong> (Legal limit: 45 - 69 CFU)</li>
-      <li>Integrative Credits: <strong>${integrativeCfu} CFU</strong> (Legal limit: 15 - 30 CFU)</li>
+      <li>Total Credits: <strong>${totalCfu} CFU</strong> (Range: 120 - 126 CFU)</li>
+      <li>Core Credits (ING-INF/02 & ING-INF/03): <strong>${coreCfu} CFU</strong> (Range: 45 - 69 CFU)</li>
+      <li>Integrative Credits: <strong>${integrativeCfu} CFU</strong> (Range: 15 - 30 CFU)</li>
     </ul>
-    ${valid ? "<p>All national and track constraints are fulfilled. You can safely submit this as an Automatic Study Plan on UniWeb.</p>"
-            : "<p>Warning: This selection does not fulfill ASP constraints and would require a Proposed Study Plan (PSP) evaluation by the Educational Committee.</p>"}
+    ${valid ? "<p>All national and departmental constraints are fulfilled. You can safely confirm this as an Automatic Study Plan on UniWeb.</p>"
+            : "<p>Warning: This configuration does not satisfy ASP limits and will require evaluation as a Proposed Study Plan (PSP).</p>"}
   `;
+
+  // Ripartizione nei 4 blocchi semestrali + attività flessibili del secondo anno
+  const blocks = {
+    y1s1: { title: "Year 1 - Semester 1 (Autumn)", classHeader: "year-1", items: [], cfu: 0 },
+    y1s2: { title: "Year 1 - Semester 2 (Spring)", classHeader: "year-1", items: [], cfu: 0 },
+    y2s1: { title: "Year 2 - Semester 1 (Autumn)", classHeader: "year-2", items: [], cfu: 0 },
+    y2s2: { title: "Year 2 - Semester 2 (Spring)", classHeader: "year-2", items: [], cfu: 0 },
+    flexible: { title: "Year 2 - Degree Completion & Final Activities", classHeader: "flexible", items: [], cfu: 0 }
+  };
+
+  allItems.forEach(item => {
+    const yr = item.year || 1;
+    const period = (item.period || "S1").toUpperCase();
+
+    if (item.code === "TRAIN" || item.code === "THESIS") {
+      blocks.flexible.items.push(item);
+      blocks.flexible.cfu += item.cfu;
+    } else if (yr === 1) {
+      if (period === "S1" || period === "A") {
+        blocks.y1s1.items.push(item);
+        blocks.y1s1.cfu += item.cfu;
+      } else {
+        blocks.y1s2.items.push(item);
+        blocks.y1s2.cfu += item.cfu;
+      }
+    } else {
+      if (period === "S1") {
+        blocks.y2s1.items.push(item);
+        blocks.y2s1.cfu += item.cfu;
+      } else {
+        blocks.y2s2.items.push(item);
+        blocks.y2s2.cfu += item.cfu;
+      }
+    }
+  });
+
+  // Generazione del markup a card per i blocchi semestrali
+  const summaryContainer = document.querySelector(".summary-tables");
+  summaryContainer.innerHTML = "<h3>Study Plan Schedule by Semester</h3>";
+
+  const gridDiv = document.createElement("div");
+  gridDiv.className = "semester-block-grid";
+
+  Object.values(blocks).forEach(block => {
+    if (block.items.length === 0) return;
+
+    const card = document.createElement("div");
+    card.className = "semester-card";
+
+    let tableRows = "";
+    block.items.forEach(c => {
+      tableRows += `
+        <tr>
+          <td>
+            <strong>${c.name}</strong>
+            <small style="color:var(--text-muted)">(${c.type})</small>
+            ${getPeriodBadge(c.period)}
+          </td>
+          <td style="text-align:right; white-space:nowrap;"><strong>${c.cfu} CFU</strong></td>
+        </tr>
+      `;
+    });
+
+    card.innerHTML = `
+      <div class="semester-card-header ${block.classHeader}">
+        <span>${block.title}</span>
+        <span>${block.cfu} CFU</span>
+      </div>
+      <div class="semester-card-body">
+        <table class="semester-table">
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    `;
+    gridDiv.appendChild(card);
+  });
+
+  summaryContainer.appendChild(gridDiv);
 }
