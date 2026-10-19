@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIME - Study Plan Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>MIME Study Plan Simulator</h1>
+        <p class="subtitle">Master's Degree in ICT for Internet and Multimedia - University of Padua</p>
+      </div>
+      <div class="stepper" id="stepper">
+        <div class="step-badge active" data-step="0">0. Cohort</div>
+        <div class="step-badge" data-step="1">1. Track</div>
+        <div class="step-badge" data-step="2">2. Core Courses</div>
+        <div class="step-badge" data-step="3">3. Integrative</div>
+        <div class="step-badge" data-step="4">4. Electives</div>
+        <div class="step-badge" data-step="5">5. Summary</div>
+      </div>
+    </header>
+
+    <main id="app">
+      <!-- Step 0: Cohort selection -->
+      <section id="step-0" class="wizard-step active">
+        <h2>Select Enrollment Cohort</h2>
+        <p class="description">Academic rules and available courses depend strictly on the academic year of your enrollment.</p>
+        <div class="form-group">
+          <label for="cohort-select">Cohort Year:</label>
+          <select id="cohort-select" class="form-control">
+            <option value="2026" selected>Cohort 2026/2027 (Current)</option>
+            <option value="2025" disabled>Cohort 2025/2026 (Archive mode)</option>
+            <option value="2024" disabled>Cohort 2024/2025 (Archive mode)</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="btn-step-0-next" class="btn btn-primary">Continue to Track Selection &rarr;</button>
+        </div>
+      </section>
+
+      <!-- Step 1: Track and Mandatory activities -->
+      <section id="step-1" class="wizard-step">
+        <h2>Select Your Study Track</h2>
+        <p class="description">Choose your track to view mandatory courses and locked activities.</p>
+        <div class="form-group">
+          <label for="track-select">Study Track:</label>
+          <select id="track-select" class="form-control"></select>
+        </div>
+        <div class="section-block">
+          <h3>Mandatory Units for Selected Track</h3>
+          <ul id="mandatory-list" class="course-list"></ul>
+        </div>
+        <div class="section-block">
+          <h3>Soft Skills Activity (Choose 1)</h3>
+          <div id="soft-skills-container" class="options-container"></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary btn-prev" data-target="0">&larr; Back</button>
+          <button id="btn-step-1-next" class="btn btn-primary">Continue to Core Courses &rarr;</button>
+        </div>
+      </section>
+
+      <!-- Step 2: Core Courses -->
+      <section id="step-2" class="wizard-step">
+        <h2>Select Core Courses (Caratterizzanti)</h2>
+        <p id="core-instruction" class="description"></p>
+        <div id="core-container" class="checkbox-group"></div>
+        <div class="actions">
+          <button class="btn btn-secondary btn-prev" data-target="1">&larr; Back</button>
+          <button id="btn-step-2-next" class="btn btn-primary">Continue to Integrative Courses &rarr;</button>
+        </div>
+      </section>
+
+      <!-- Step 3: Integrative Courses -->
+      <section id="step-3" class="wizard-step">
+        <h2>Select Integrative Courses (Affini)</h2>
+        <p class="description">Courses chosen in the previous step are excluded automatically to prevent duplicates.</p>
+        <div id="integrative-container"></div>
+        <div class="actions">
+          <button class="btn btn-secondary btn-prev" data-target="2">&larr; Back</button>
+          <button id="btn-step-3-next" class="btn btn-primary">Continue to Electives &rarr;</button>
+        </div>
+      </section>
+
+      <!-- Step 4: Elective Courses (12 CFU) -->
+      <section id="step-4" class="wizard-step">
+        <h2>Select Elective Courses (A scelta libera - 12 CFU)</h2>
+        <p class="description">Select 12 CFU (typically 2 courses) from any available MIME course not already selected.</p>
+        <div id="electives-container" class="checkbox-group"></div>
+        <div class="actions">
+          <button class="btn btn-secondary btn-prev" data-target="3">&larr; Back</button>
+          <button id="btn-step-4-next" class="btn btn-primary">Review & Validate Plan &rarr;</button>
+        </div>
+      </section>
+
+      <!-- Step 5: Summary and Legal Constraints Validation -->
+      <section id="step-5" class="wizard-step">
+        <h2>Study Plan Summary & Validation</h2>
+        <div id="validation-report" class="validation-box"></div>
+        <div class="summary-tables">
+          <h3>Selected Exams & Activities</h3>
+          <table class="data-table" id="summary-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Course Title</th>
+                <th>SSD</th>
+                <th>CFU</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary btn-prev" data-target="4">&larr; Back to Electives</button>
+          <button id="btn-print" class="btn btn-success" onclick="window.print()">Print / Export PDF</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
