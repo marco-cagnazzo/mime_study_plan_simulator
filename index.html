@@ -1408,13 +1408,13 @@ function renderIntegrativeStep() {
 
       validationDiv.className = `validation-box ${valid ? "valid-status" : "invalid-status"}`;
       validationDiv.innerHTML = `
-        <h4>${valid ? "Study Plan Compliant" : "Study Plan Requires Attention (Deviations Detected)"}</h4>
+        <h4>${valid ? "This Study Plan is <b>probably</b> compliant" : "Study Plan Requires Attention (Deviations Detected)"}</h4>
         <ul>
           <li>Total Credits: <strong>${totalCfu} CFU</strong> (Range: 120 - 126 CFU)</li>
           <li>Core Credits (IINF-02/A & IINF-03/A): <strong>${coreCfu} CFU</strong> (Range: 45 - 69 CFU)</li>
           <li>Integrative Credits: <strong>${integrativeCfu} CFU</strong> (Range: 15 - 30 CFU)</li>
         </ul>
-        ${valid ? "<p>All ministerial and curriculum constraints seem fulfilled. Very probably, you are able to submit this study plan as an ASP with automatic approval. However, please remember that this is an unofficial tool and that the final decision depends on actual compliance to the official MIME's rules.</p>"
+        ${valid ? "<p>All ministerial and curriculum constraints seem fulfilled. Very probably, you are able to submit this study plan as an ASP with automatic approval. However, please remember that <b>this is an unofficial tool</b> and that the final decision depends on <b>actual compliance to the official MIME's rules</b>.</p>"
                 : "<p>Warning: This configuration deviates from standard ASP bounds and will require formal evaluation as a Proposed Study Plan (PSP).</p>"}
       `;
 
