@@ -4,6 +4,7 @@ A lightweight, client-side web application designed to help students of the **Ma
 
 The tool guides students through their respective cohort regulations, curriculum tracks, mandatory courses, core/integrative options, and free-choice electives.
 
+![](qr_github.png)
 ---
 
 > ### ⚠️ Important Disclaimer
