@@ -161,7 +161,6 @@
       background: #f8f9fa;
     }
 
-/* Nuove etichette compatte Anno + Semestre */
     .badge-period {
       display: inline-block;
       padding: 2px 7px;
@@ -174,16 +173,13 @@
       vertical-align: middle;
     }
 
-    /* Anno 1 - Famiglia Azzurro / Blu */
     .badge-y1-s1 { background-color: #e1f5fe; color: #0277bd; border: 1px solid #81d4fa; }
     .badge-y1-s2 { background-color: #b3e5fc; color: #01579b; border: 1px solid #4fc3f7; }
     .badge-y1-a  { background-color: #e8eaf6; color: #283593; border: 1px solid #9fa8da; }
 
-    /* Anno 2 - Famiglia Rosa / Rosso / Bordeaux */
     .badge-y2-s1 { background-color: #fce4ec; color: #c2185b; border: 1px solid #f48fb1; }
     .badge-y2-s2 { background-color: #f8bbd0; color: #880e4f; border: 1px solid #f06292; }
 
-    /* Attività flessibili o non vincolate */
     .badge-flexible { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
 
     .badge-s1 { background-color: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
@@ -397,7 +393,7 @@
       "2026": {
         "cohort_name": "Cohort 2026/2027",
         "curricula": {
-                    "artificial_intelligence": {
+          "artificial_intelligence": {
             "name": "Artificial Intelligence",
             "code": "010PD",
             "mandatory": [
@@ -579,7 +575,7 @@
               }
             ]
           },
-                    "life_health": {
+          "life_health": {
             "name": "ICT for Life and Health",
             "code": "004PD",
             "mandatory": [
@@ -756,7 +752,7 @@
                 {"code": "AWS", "name": "Advanced Wireless Systems", "cfu": 6, "ssd": "IINF-03/A", "year": 2, "period": "S1"}
               ]
             },
-            "has_open_core": true, // Indica che c'è la Regola Core 3: 1 core libero
+            "has_open_core": true,
             "integrative_rules": [
               {
                 "group_id": "group_a",
@@ -810,7 +806,9 @@
       selectedSoftSkill: null,
       selectedCore: [],
       selectedIntegrative: [],
-      selectedElectives: []
+      selectedElectives: [],
+      selectedMandatoryIC: null,
+      selectedMandatoryModule: null
     };
 
     function formatPeriodLabel(period) {
@@ -820,39 +818,39 @@
       return "Flexible";
     }
 
-function getPeriodBadge(period, year) {
-  const yr = parseInt(year, 10) || 1;
-  const p = (period || "Any").toUpperCase();
+    function getPeriodBadge(period, year) {
+      const yr = parseInt(year, 10) || 1;
+      const p = (period || "Any").toUpperCase();
 
-  let labelText = "";
-  let cssClass = "";
+      let labelText = "";
+      let cssClass = "";
 
-  if (p === "ANY" || p === "FLEXIBLE") {
-    labelText = `Y${yr} Flexible`;
-    cssClass = "badge-flexible";
-  } else if (p === "A") {
-    labelText = `Y${yr} Full Year`;
-    cssClass = "badge-y1-a";
-  } else if (yr === 1) {
-    if (p === "S1") {
-      labelText = "Y1 S1";
-      cssClass = "badge-y1-s1";
-    } else {
-      labelText = "Y1 S2";
-      cssClass = "badge-y1-s2";
+      if (p === "ANY" || p === "FLEXIBLE") {
+        labelText = `Y${yr} Flexible`;
+        cssClass = "badge-flexible";
+      } else if (p === "A") {
+        labelText = `Y${yr} Full Year`;
+        cssClass = "badge-y1-a";
+      } else if (yr === 1) {
+        if (p === "S1") {
+          labelText = "Y1 S1";
+          cssClass = "badge-y1-s1";
+        } else {
+          labelText = "Y1 S2";
+          cssClass = "badge-y1-s2";
+        }
+      } else {
+        if (p === "S1") {
+          labelText = "Y2 S1";
+          cssClass = "badge-y2-s1";
+        } else {
+          labelText = "Y2 S2";
+          cssClass = "badge-y2-s2";
+        }
+      }
+
+      return `<span class="badge-period ${cssClass}">${labelText}</span>`;
     }
-  } else { // Anno 2
-    if (p === "S1") {
-      labelText = "Y2 S1";
-      cssClass = "badge-y2-s1";
-    } else {
-      labelText = "Y2 S2";
-      cssClass = "badge-y2-s2";
-    }
-  }
-
-  return `<span class="badge-period ${cssClass}">${labelText}</span>`;
-}
 
     function getTrackCoreGroups(track) {
       const groups = [];
@@ -875,54 +873,6 @@ function getPeriodBadge(period, year) {
       return groups;
     }
 
-    function getSelectedCodesSet() {
-      const codes = new Set();
-
-      state.mandatory.forEach(m => {
-        codes.add(m.code);
-        if (m.is_integrated && m.modules) {
-          m.modules.forEach(mod => codes.add(mod.code));
-        }
-      });
-
-      state.selectedCore.forEach(c => codes.add(c.code));
-      state.selectedIntegrative.forEach(c => codes.add(c.code));
-      state.selectedElectives.forEach(c => codes.add(c.code));
-
-      return codes;
-    }
-
-    function getAllMasterCoursesMap() {
-      const tracks = RULES_DATA[state.cohort].curricula;
-      const map = new Map();
-
-      for (const key in tracks) {
-        const t = tracks[key];
-        // Se il track ha opzioni integrate
-        if (t.integrated_options) {
-          t.integrated_options.forEach(ic => {
-            ic.paired_modules.forEach(m => { if (!map.has(m.code)) map.set(m.code, m); });
-          });
-        }
-        if (t.mandatory) {
-          t.mandatory.forEach(m => {
-            if (!m.is_integrated && !map.has(m.code)) map.set(m.code, m);
-          });
-        }
-        if (t.core_rules && t.core_rules.options) {
-          t.core_rules.options.forEach(c => { if (!map.has(c.code)) map.set(c.code, c); });
-        }
-        if (t.core_rules_2 && t.core_rules_2.options) {
-          t.core_rules_2.options.forEach(c => { if (!map.has(c.code)) map.set(c.code, c); });
-        }
-        if (t.integrative_rules) {
-          t.integrative_rules.forEach(g => {
-            g.options.forEach(c => { if (!map.has(c.code)) map.set(c.code, c); });
-          });
-        }
-      }
-      return map;
-    }
     document.addEventListener("DOMContentLoaded", () => {
       setupNavigation();
       setupCohort();
@@ -940,7 +890,7 @@ function getPeriodBadge(period, year) {
         goToStep(1);
       });
 
-document.getElementById("btn-step-1-next").addEventListener("click", () => {
+      document.getElementById("btn-step-1-next").addEventListener("click", () => {
         const track = RULES_DATA[state.cohort].curricula[state.trackKey];
         if (track.is_basket_mandatory) {
           if (!state.selectedMandatoryIC || !state.selectedMandatoryModule) {
@@ -957,7 +907,7 @@ document.getElementById("btn-step-1-next").addEventListener("click", () => {
         goToStep(2);
       });
 
-document.getElementById("btn-step-2-next").addEventListener("click", () => {
+      document.getElementById("btn-step-2-next").addEventListener("click", () => {
         const track = RULES_DATA[state.cohort].curricula[state.trackKey];
         const coreGroups = getTrackCoreGroups(track);
 
@@ -972,7 +922,7 @@ document.getElementById("btn-step-2-next").addEventListener("click", () => {
         if (track.has_open_core) {
           const selectedOpen = state.selectedCore.filter(c => c.coreGroupId === "core_open");
           if (selectedOpen.length !== 1) {
-            alert("In 'Core Group 3 (Any MIME Core Course)', you must select exactly 1 course.");
+            alert("In 'Core Group 3 (Choose 1 course from any remaining MIME Core Course)', you must select exactly 1 course.");
             return;
           }
         }
@@ -981,22 +931,19 @@ document.getElementById("btn-step-2-next").addEventListener("click", () => {
         goToStep(3);
       });
 
-document.getElementById("btn-step-3-next").addEventListener("click", () => {
+      document.getElementById("btn-step-3-next").addEventListener("click", () => {
         const track = RULES_DATA[state.cohort].curricula[state.trackKey];
 
-        // Calcola il totale richiesto (somma dei required_count oppure integrative_total_required se presente)
         let totalReq = track.integrative_total_required || 0;
         if (!totalReq) {
           track.integrative_rules.forEach(r => totalReq += (r.required_count || 0));
         }
 
-        // 1. Controllo sul totale complessivo
         if (state.selectedIntegrative.length !== totalReq) {
           alert(`You must select exactly ${totalReq} integrative courses in total (currently selected: ${state.selectedIntegrative.length}).`);
           return;
         }
 
-        // 2. Controllo specifico per la regola di Group A (almeno 1 corso da group_a)
         const hasGroupA = track.integrative_rules.some(r => r.group_id === "group_a");
         if (hasGroupA) {
           const countGroupA = state.selectedIntegrative.filter(c => c.groupId === "group_a").length;
@@ -1058,17 +1005,15 @@ document.getElementById("btn-step-3-next").addEventListener("click", () => {
       });
     }
 
-// Nuove variabili di stato per il paniere
-    state.selectedMandatoryIC = null;
-    state.selectedMandatoryModule = null;
-
     function updateTrackUI() {
       const track = RULES_DATA[state.cohort].curricula[state.trackKey];
       const list = document.getElementById("mandatory-list");
       list.innerHTML = "";
 
+      state.selectedMandatoryIC = null;
+      state.selectedMandatoryModule = null;
+
       if (track.is_basket_mandatory) {
-        // Renderizza la scelta del corso integrato
         const basket = track.mandatory_baskets.ic_choice;
         const basketDiv = document.createElement("div");
         basketDiv.innerHTML = `<strong>${basket.title}</strong>`;
@@ -1096,7 +1041,6 @@ document.getElementById("btn-step-3-next").addEventListener("click", () => {
             state.selectedMandatoryIC = chosenIC;
             state.selectedMandatoryModule = null;
 
-            // Mostra i moduli dell'altro integrato
             moduleDiv.style.display = "block";
             moduleDiv.innerHTML = `<strong>Select 1 stand-alone module (6 CFU) from the other integrated course:</strong>`;
             chosenIC.counterpart_modules.forEach(mod => {
@@ -1117,7 +1061,6 @@ document.getElementById("btn-step-3-next").addEventListener("click", () => {
         });
 
       } else {
-        // Gestione standard
         state.mandatory = [...track.mandatory];
         track.mandatory.forEach(m => {
           const li = document.createElement("li");
@@ -1132,7 +1075,6 @@ document.getElementById("btn-step-3-next").addEventListener("click", () => {
         });
       }
 
-      // Soft skills
       const softDiv = document.getElementById("soft-skills-container");
       softDiv.innerHTML = "";
       const softOptions = RULES_DATA[state.cohort].soft_skills.options;
@@ -1152,7 +1094,7 @@ document.getElementById("btn-step-3-next").addEventListener("click", () => {
       });
     }
 
-function renderCoreStep() {
+    function renderCoreStep() {
       const track = RULES_DATA[state.cohort].curricula[state.trackKey];
       const container = document.getElementById("core-container");
       container.innerHTML = "";
@@ -1160,12 +1102,14 @@ function renderCoreStep() {
 
       const coreGroups = getTrackCoreGroups(track);
 
+      const standardGroupsContainer = document.createElement("div");
+      container.appendChild(standardGroupsContainer);
+
       coreGroups.forEach(group => {
         const groupDiv = document.createElement("div");
         groupDiv.className = "section-block";
         groupDiv.innerHTML = `<h4>${group.title}</h4>`;
 
-        // Escludi codici già presenti tra gli obbligatori
         const chosenCodes = new Set(state.mandatory.map(c => c.code));
         if (state.mandatory.some(c => c.is_integrated && c.modules)) {
           state.mandatory.forEach(c => {
@@ -1187,17 +1131,42 @@ function renderCoreStep() {
           groupDiv.appendChild(label);
         });
 
-        container.appendChild(groupDiv);
+        standardGroupsContainer.appendChild(groupDiv);
       });
 
-      // Se il percorso prevede la Regola Core 3: un core libero dal Master
-      if (track.has_open_core) {
+      const openCoreContainer = document.createElement("div");
+      container.appendChild(openCoreContainer);
+
+      function syncState() {
+        state.selectedCore = Array.from(container.querySelectorAll("input:checked")).map(el => {
+          const grpId = el.dataset.coreGroup;
+          let found = null;
+          for (const g of coreGroups) {
+            found = g.options.find(c => c.code === el.value);
+            if (found) break;
+          }
+          if (!found && grpId === "core_open") {
+            const allTracks = RULES_DATA[state.cohort].curricula;
+            for (const tk in allTracks) {
+              const t = allTracks[tk];
+              if (t.core_rules) found = t.core_rules.options.find(c => c.code === el.value);
+              if (!found && t.core_rules_2) found = t.core_rules_2.options.find(c => c.code === el.value);
+              if (found) break;
+            }
+          }
+          return { ...found, coreGroupId: grpId };
+        });
+      }
+
+      function updateOpenCore() {
+        if (!track.has_open_core) return;
+        openCoreContainer.innerHTML = "";
+
         const openDiv = document.createElement("div");
         openDiv.className = "section-block";
         openDiv.id = "open-core-container";
-        openDiv.innerHTML = `<h4>Core Group 3 - Any MIME Core Course (Choose 1 course)</h4>`;
+        openDiv.innerHTML = `<h4>Core Group 3 (Choose 1 course from any remaining MIME Core Course)</h4>`;
 
-        // Raccoglie tutti i corsi core definiti in tutti i curricula
         const allMimeCores = new Map();
         const allTracks = RULES_DATA[state.cohort].curricula;
         for (const tk in allTracks) {
@@ -1210,19 +1179,26 @@ function renderCoreStep() {
           }
         }
 
-        // Esclude i codici già presenti tra obbligatori o nei gruppi Core 1 e 2
-        const excludedCodes = new Set([
-          ...state.mandatory.map(c => c.code),
-          ...track.core_rules.options.map(c => c.code),
-          ...track.core_rules_2.options.map(c => c.code)
-        ]);
+        const excludedCodes = new Set();
+        state.mandatory.forEach(m => {
+          excludedCodes.add(m.code);
+          if (m.is_integrated && m.modules) {
+            m.modules.forEach(mod => excludedCodes.add(mod.code));
+          }
+        });
+
+        standardGroupsContainer.querySelectorAll("input:checked").forEach(cb => {
+          excludedCodes.add(cb.value);
+        });
 
         const selectableOpenCores = Array.from(allMimeCores.values()).filter(c => !excludedCodes.has(c.code));
+        selectableOpenCores.sort((a, b) => a.name.localeCompare(b.name));
 
         selectableOpenCores.forEach(c => {
+          const isChecked = state.selectedCore.some(sc => sc.code === c.code && sc.coreGroupId === "core_open");
           const label = document.createElement("label");
           label.innerHTML = `
-            <input type="checkbox" data-core-group="core_open" value="${c.code}">
+            <input type="checkbox" data-core-group="core_open" value="${c.code}" ${isChecked ? "checked" : ""}>
             <span>
               <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU (Year ${c.year})
               ${getPeriodBadge(c.period, c.year)}
@@ -1231,35 +1207,26 @@ function renderCoreStep() {
           openDiv.appendChild(label);
         });
 
-        container.appendChild(openDiv);
+        openCoreContainer.appendChild(openDiv);
+
+        openCoreContainer.querySelectorAll("input").forEach(cb => {
+          cb.addEventListener("change", syncState);
+        });
+
+        syncState();
       }
 
-      container.querySelectorAll("input").forEach(cb => {
+      updateOpenCore();
+
+      standardGroupsContainer.querySelectorAll("input").forEach(cb => {
         cb.addEventListener("change", () => {
-          state.selectedCore = Array.from(container.querySelectorAll("input:checked")).map(el => {
-            const grpId = el.dataset.coreGroup;
-            // Cerca prima nei gruppi del track, altrimenti nel pool globale
-            let found = null;
-            for (const g of coreGroups) {
-              found = g.options.find(c => c.code === el.value);
-              if (found) break;
-            }
-            if (!found && grpId === "core_open") {
-              const allTracks = RULES_DATA[state.cohort].curricula;
-              for (const tk in allTracks) {
-                const t = allTracks[tk];
-                if (t.core_rules) found = t.core_rules.options.find(c => c.code === el.value);
-                if (!found && t.core_rules_2) found = t.core_rules_2.options.find(c => c.code === el.value);
-                if (found) break;
-              }
-            }
-            return { ...found, coreGroupId: grpId };
-          });
+          syncState();
+          updateOpenCore();
         });
       });
     }
 
-function renderIntegrativeStep() {
+    function renderIntegrativeStep() {
       const track = RULES_DATA[state.cohort].curricula[state.trackKey];
       const container = document.getElementById("integrative-container");
       container.innerHTML = "";
@@ -1307,7 +1274,6 @@ function renderIntegrativeStep() {
       container.innerHTML = "";
       state.selectedElectives = [];
 
-      // Estrazione rigorosa per solo `code` di tutti gli esami già scelti
       const alreadyChosenCodes = new Set();
 
       state.mandatory.forEach(c => {
@@ -1319,7 +1285,6 @@ function renderIntegrativeStep() {
       state.selectedCore.forEach(c => alreadyChosenCodes.add(c.code));
       state.selectedIntegrative.forEach(c => alreadyChosenCodes.add(c.code));
 
-      // Costruzione del catalogo complessivo MIME basato sulla chiave univoca `code`
       const trackData = RULES_DATA[state.cohort].curricula;
       const pool = new Map();
 
@@ -1337,10 +1302,7 @@ function renderIntegrativeStep() {
         }
       }
 
-      // Filtra escludendo qualsiasi corso il cui `code` è già presente
       const electivesList = Array.from(pool.values()).filter(c => !alreadyChosenCodes.has(c.code) && c.cfu === 6);
-
-      // Ordina alfabeticamente per facilitare la ricerca da parte dello studente
       electivesList.sort((a, b) => a.name.localeCompare(b.name));
 
       electivesList.forEach(c => {
@@ -1376,7 +1338,6 @@ function renderIntegrativeStep() {
         ...fixed.map(c => ({ ...c, type: "Fixed Activity" }))
       ];
 
-      // Calcolo crediti formali di carriera e vincoli di legge
       let totalCfu = 0;
       let coreCfu = 0;
       let integrativeCfu = 0;
@@ -1418,7 +1379,6 @@ function renderIntegrativeStep() {
                 : "<p>Warning: This configuration deviates from standard ASP bounds and will require formal evaluation as a Proposed Study Plan (PSP).</p>"}
       `;
 
-      // Scomposizione dei corsi integrati nei singoli moduli da 6 CFU per il riepilogo semestrale
       const scheduleItems = [];
       rawItems.forEach(item => {
         if (item.is_integrated && item.modules && item.modules.length > 0) {
@@ -1438,7 +1398,6 @@ function renderIntegrativeStep() {
         }
       });
 
-      // Distribuzione nei 4 semestri + attività flessibili del secondo anno
       const blocks = {
         y1s1: { title: "Year 1 - Semester 1 (Autumn)", classHeader: "year-1", items: [], cfu: 0 },
         y1s2: { title: "Year 1 - Semester 2 (Spring)", classHeader: "year-1", items: [], cfu: 0 },
