@@ -216,6 +216,7 @@
 
     .valid-status { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .invalid-status { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .warning-status { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
 
     .semester-block-grid {
       display: grid;
@@ -285,8 +286,8 @@
   <div class="container">
     <header>
       <div class="brand">
-        <h1>MIME Automatic Study Plan Simulator</h1>
-        <p class="subtitle"><a href="https://mime.dei.unipd.it/tracks">Master's Degree in ICT for Internet and Multimedia - University of Padua</a></p>
+        <h1>MIME Study Plan Simulator</h1>
+        <p class="subtitle">Master's Degree in ICT for Internet and Multimedia - University of Padua</p>
       </div>
       <div class="disclaimer-banner">
         <strong>Unofficial Educational Aid:</strong> This tool is an informational simulator. Final study plan approval on UniWeb remains subject to verification and formal confirmation by the Study Plan Committee.
@@ -574,6 +575,50 @@
                 ]
               }
             ]
+          },
+          "security_of_cybersystems": {
+            "name": "Security of Cybersystems (Special case)",
+            "code": "002PD-SEC",
+            "is_basket_mandatory": false,
+            "mandatory": [
+              {
+                "code": "IC_TS",
+                "name": "Transmission Systems (Integrated Course)",
+                "cfu": 12,
+                "ssd": "IINF-03/A",
+                "year": 1,
+                "period": "A",
+                "is_integrated": true,
+                "modules": [
+                  {"code": "FO", "name": "Fiber Optics (Mod. A)", "cfu": 6, "ssd": "IINF-02/A", "year": 1, "period": "S1"},
+                  {"code": "DIG_COMM", "name": "Digital Communications (Mod. B)", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S1"}
+                ]
+              },
+              {"code": "IOT_SC", "name": "Internet of Things and Smart Cities", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S1"},
+              {"code": "MULT_COMM", "name": "Multimedia Communications", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S2"},
+              {"code": "STOCH_PROC", "name": "Stochastic Processes", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S2"},
+              {"code": "NET_MODEL", "name": "Network Modeling", "cfu": 6, "ssd": "IINF-03/A", "year": 2, "period": "S1"},
+              {"code": "DFB", "name": "Digital Forensics and Biometrics", "cfu": 6, "ssd": "IINF-03/A", "year": 2, "period": "S1"},
+              {"code": "INF_SEC", "name": "Information Security", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S2"},
+              {"code": "ML", "name": "Machine Learning", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S1"},
+              {"code": "CRYPTO", "name": "Cryptography", "cfu": 6, "ssd": "MATH-03/A", "year": 1, "period": "S1"},
+              {"code": "CPS_IOT_SEC", "name": "Cyber Physical Systems and IoT Security", "cfu": 6, "ssd": "IINF-05/A", "year": 1, "period": "S1"},
+              {"code": "EH", "name": "Ethical Hacking", "cfu": 6, "ssd": "IINF-05/A", "year": 2, "period": "S1"}
+            ],
+            "core_rules": null,
+            "integrative_rules": [],
+            "has_open_core": false,
+            "security_elective_rules": {
+              "title": "Select 2 Courses (12 CFU) from the Security Basket",
+              "required_count": 2,
+              "options": [
+                {"code": "AML", "name": "Adversarial Machine Learning", "cfu": 6, "ssd": "IINF-03/A", "year": 2, "period": "S1", "is_mime": true},
+                {"code": "SDH", "name": "Secure Digital Healthcare", "cfu": 6, "ssd": "IINF-03/A", "year": 1, "period": "S2", "is_mime": true},
+                {"code": "QIC", "name": "Quantum Information and Computing", "cfu": 6, "ssd": "IINF-05/A", "year": 1, "period": "S1", "is_mime": true},
+                {"code": "QCS", "name": "Quantum Cryptography and Security", "cfu": 6, "ssd": "IINF-03/A", "year": 2, "period": "S1", "is_mime": true},
+                {"code": "ATCNS", "name": "Advanced Topics in Computer and Network Security", "cfu": 6, "ssd": "IINF-01/A", "year": 2, "period": "S1", "is_mime": true}
+              ]
+            }
           },
           "life_health": {
             "name": "ICT for Life and Health",
@@ -903,8 +948,14 @@
           alert("Please select one Soft Skill activity.");
           return;
         }
-        renderCoreStep();
-        goToStep(2);
+        
+        if (track.code === "002PD-SEC") {
+             renderElectivesStep();
+             goToStep(4);
+        } else {
+            renderCoreStep();
+            goToStep(2);
+        }
       });
 
       document.getElementById("btn-step-2-next").addEventListener("click", () => {
@@ -1092,6 +1143,13 @@
           state.selectedSoftSkill = softOptions.find(o => o.code === e.target.value);
         });
       });
+      
+      const nextBtn = document.getElementById("btn-step-1-next");
+      if (track.code === "002PD-SEC") {
+          nextBtn.innerHTML = "Skip to Electives (Security Basket) &rarr;";
+      } else {
+          nextBtn.innerHTML = "Continue to Core Courses &rarr;";
+      }
     }
 
     function renderCoreStep() {
@@ -1101,7 +1159,7 @@
       state.selectedCore = [];
 
       const coreGroups = getTrackCoreGroups(track);
-
+      
       const standardGroupsContainer = document.createElement("div");
       container.appendChild(standardGroupsContainer);
 
@@ -1270,52 +1328,79 @@
     }
 
     function renderElectivesStep() {
+      const track = RULES_DATA[state.cohort].curricula[state.trackKey];
       const container = document.getElementById("electives-container");
       container.innerHTML = "";
       state.selectedElectives = [];
-
-      const alreadyChosenCodes = new Set();
-
-      state.mandatory.forEach(c => {
-        alreadyChosenCodes.add(c.code);
-        if (c.modules) {
-          c.modules.forEach(m => alreadyChosenCodes.add(m.code));
-        }
-      });
-      state.selectedCore.forEach(c => alreadyChosenCodes.add(c.code));
-      state.selectedIntegrative.forEach(c => alreadyChosenCodes.add(c.code));
-
-      const trackData = RULES_DATA[state.cohort].curricula;
+      
+      let electivesList = [];
+      let isSecurityTrack = false;
       const pool = new Map();
 
-      for (const tKey in trackData) {
-        const tr = trackData[tKey];
-        if (tr.mandatory) tr.mandatory.forEach(c => pool.set(c.code, c));
-        if (tr.core_rules && tr.core_rules.options) {
-          tr.core_rules.options.forEach(c => pool.set(c.code, c));
-        }
-        if (tr.core_rules_2 && tr.core_rules_2.options) {
-          tr.core_rules_2.options.forEach(c => pool.set(c.code, c));
-        }
-        if (tr.integrative_rules) {
-          tr.integrative_rules.forEach(g => g.options.forEach(c => pool.set(c.code, c)));
-        }
+      if (track.code === "002PD-SEC") {
+          isSecurityTrack = true;
+          const groupDiv = document.createElement("div");
+          groupDiv.className = "section-block";
+          groupDiv.innerHTML = `<h4>${track.security_elective_rules.title}</h4>
+                                <p class="description">Select 12 CFU (All choices in this basket are pre-approved for ASP).</p>`;
+          
+          track.security_elective_rules.options.forEach(c => {
+              pool.set(c.code, c);
+              const warningBadge = !c.is_mime ? `<span class="badge-period" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;">EXTERNAL (PSP)</span>` : '';
+              const label = document.createElement("label");
+              label.innerHTML = `
+                <input type="checkbox" value="${c.code}">
+                <span>
+                  <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU
+                  ${getPeriodBadge(c.period, c.year)}
+                  ${warningBadge}
+                </span>
+              `;
+              groupDiv.appendChild(label);
+          });
+          container.appendChild(groupDiv);
+      } else {
+          const alreadyChosenCodes = new Set();
+          state.mandatory.forEach(c => {
+            alreadyChosenCodes.add(c.code);
+            if (c.modules) {
+              c.modules.forEach(m => alreadyChosenCodes.add(m.code));
+            }
+          });
+          state.selectedCore.forEach(c => alreadyChosenCodes.add(c.code));
+          state.selectedIntegrative.forEach(c => alreadyChosenCodes.add(c.code));
+    
+          const trackData = RULES_DATA[state.cohort].curricula;
+    
+          for (const tKey in trackData) {
+            const tr = trackData[tKey];
+            if (tr.mandatory) tr.mandatory.forEach(c => pool.set(c.code, c));
+            if (tr.core_rules && tr.core_rules.options) {
+              tr.core_rules.options.forEach(c => pool.set(c.code, c));
+            }
+            if (tr.core_rules_2 && tr.core_rules_2.options) {
+              tr.core_rules_2.options.forEach(c => pool.set(c.code, c));
+            }
+            if (tr.integrative_rules) {
+              tr.integrative_rules.forEach(g => g.options.forEach(c => pool.set(c.code, c)));
+            }
+          }
+    
+          electivesList = Array.from(pool.values()).filter(c => !alreadyChosenCodes.has(c.code) && c.cfu === 6);
+          electivesList.sort((a, b) => a.name.localeCompare(b.name));
+    
+          electivesList.forEach(c => {
+            const label = document.createElement("label");
+            label.innerHTML = `
+              <input type="checkbox" value="${c.code}">
+              <span>
+                <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU
+                ${getPeriodBadge(c.period, c.year)}
+              </span>
+            `;
+            container.appendChild(label);
+          });
       }
-
-      const electivesList = Array.from(pool.values()).filter(c => !alreadyChosenCodes.has(c.code) && c.cfu === 6);
-      electivesList.sort((a, b) => a.name.localeCompare(b.name));
-
-      electivesList.forEach(c => {
-        const label = document.createElement("label");
-        label.innerHTML = `
-          <input type="checkbox" value="${c.code}">
-          <span>
-            <strong>${c.name}</strong> [${c.ssd}] - ${c.cfu} CFU
-            ${getPeriodBadge(c.period, c.year)}
-          </span>
-        `;
-        container.appendChild(label);
-      });
 
       container.querySelectorAll("input").forEach(cb => {
         cb.addEventListener("change", () => {
@@ -1324,6 +1409,15 @@
           });
         });
       });
+      
+      const prevBtn = document.querySelector("#step-4 .btn-prev");
+      if (isSecurityTrack) {
+          prevBtn.dataset.target = "1";
+          prevBtn.innerHTML = "&larr; Back to Track";
+      } else {
+          prevBtn.dataset.target = "3";
+          prevBtn.innerHTML = "&larr; Back";
+      }
     }
 
     function renderSummaryStep() {
@@ -1341,9 +1435,14 @@
       let totalCfu = 0;
       let coreCfu = 0;
       let integrativeCfu = 0;
+      let hasExternalElective = false;
 
       rawItems.forEach(item => {
         totalCfu += item.cfu;
+
+        if (item.type === "Elective" && item.is_mime === false) {
+            hasExternalElective = true;
+        }
 
         const isCoreSSD = [
           "IINF-02/A", "IINF-03/A"
@@ -1365,18 +1464,28 @@
       const isLegalTotal = totalCfu >= 120 && totalCfu <= 126;
       const isLegalCore = coreCfu >= 45 && coreCfu <= 69;
       const isLegalIntegrative = integrativeCfu >= 15 && integrativeCfu <= 30;
-      const valid = isLegalTotal && isLegalCore && isLegalIntegrative;
+      let valid = isLegalTotal && isLegalCore && isLegalIntegrative;
+      
+      let statusClass = valid ? "valid-status" : "invalid-status";
+      let titleMsg = valid ? "This Study Plan is <b>probably</b> compliant" : "Study Plan Requires Attention (Deviations Detected)";
+      let bodyMsg = valid ? "<p>All ministerial and curriculum constraints seem fulfilled. Very probably, you are able to submit this study plan as an ASP with automatic approval. However, please remember that <b>this is an unofficial tool</b> and that the final decision depends on <b>actual compliance to the official MIME's rules</b>.</p>"
+                : "<p>Warning: This configuration deviates from standard ASP bounds and will require formal evaluation as a Proposed Study Plan (PSP).</p>";
 
-      validationDiv.className = `validation-box ${valid ? "valid-status" : "invalid-status"}`;
+      if (valid && hasExternalElective) {
+          statusClass = "warning-status";
+          titleMsg = "Proposed Study Plan (PSP) Required";
+          bodyMsg = "<p>Your plan meets numerical constraints, but you have selected <b>external courses</b> not in the official MIME manifesto (e.g., Computers and Networks Security). <b>You MUST submit this as a Proposed Study Plan (PSP)</b> for manual committee approval. It will NOT be automatically approved as an ASP.</p>";
+      }
+
+      validationDiv.className = `validation-box ${statusClass}`;
       validationDiv.innerHTML = `
-        <h4>${valid ? "This Study Plan is <b>probably</b> compliant" : "Study Plan Requires Attention (Deviations Detected)"}</h4>
+        <h4>${titleMsg}</h4>
         <ul>
           <li>Total Credits: <strong>${totalCfu} CFU</strong> (Range: 120 - 126 CFU)</li>
           <li>Core Credits (IINF-02/A & IINF-03/A): <strong>${coreCfu} CFU</strong> (Range: 45 - 69 CFU)</li>
           <li>Integrative Credits: <strong>${integrativeCfu} CFU</strong> (Range: 15 - 30 CFU)</li>
         </ul>
-        ${valid ? "<p>All ministerial and curriculum constraints seem fulfilled. Very probably, you are able to submit this study plan as an ASP with automatic approval. However, please remember that <b>this is an unofficial tool</b> and that the final decision depends on <b>actual compliance to the official MIME's rules. See <a href=https://unipd.coursecatalogue.cineca.it/corsi/2026/10363>here (Annex3)</a> the regulations of ASP.</b>.</p>"
-                : "<p>Warning: This configuration deviates from standard ASP bounds and will require formal evaluation as a Proposed Study Plan (PSP).</p>"}
+        ${bodyMsg}
       `;
 
       const scheduleItems = [];
